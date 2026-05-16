@@ -1,12 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { useNewProject, type ProjectInput } from "@/modules/prd/context/new-project-context";
-import {
-  generateMarkdownPRD,
-  generateMarkdownSummary,
-  generateMarkdownRoadmap,
-} from "@/services/markdown-generator";
+import { useNewProject } from "@/modules/prd/context/new-project-context";
+import { generateMarkdownPRD } from "@/services/markdown-generator";
 
 // ─── Ícones simples inline ────────────────────────────────────────────────────
 
@@ -22,15 +18,9 @@ const IconFile = () => (
   </svg>
 );
 
-const IconPackage = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.25 6.375c0 2.278-1.535 4.172-3.6 4.972a6.002 6.002 0 002.134 5.6 6 6 0 01-8.946 2.05A6.002 6.002 0 005.25 20.75" />
-  </svg>
-);
-
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-export type DownloadFormat = "simple" | "frontmatter" | "zip";
+export type DownloadFormat = "simple" | "frontmatter";
 
 interface DownloadOption {
   id: DownloadFormat;
@@ -59,39 +49,6 @@ class DownloadManager {
     URL.revokeObjectURL(url);
   }
 
-  static async downloadZip(files: Record<string, string>, zipName: string) {
-    // Para MVP, usar jszip (já que é cliente)
-    // Em produção, poderia gerar ZIP no servidor
-    try {
-      const JSZip = (await import("jszip")).default;
-      const zip = new JSZip();
-
-      // Adicionar arquivos ao ZIP
-      Object.entries(files).forEach(([filename, content]) => {
-        zip.file(filename, content);
-      });
-
-      // Gerar blob e download
-      const blob = await zip.generateAsync({ type: "blob" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-
-      link.setAttribute("href", url);
-      link.setAttribute("download", zipName);
-      link.style.visibility = "hidden";
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Erro ao gerar ZIP:", error);
-      alert(
-        "Não foi possível criar ZIP. Tente baixar em formato Markdown simples."
-      );
-    }
-  }
 }
 
 // ─── Componente Principal ──────────────────────────────────────────────────────
@@ -104,23 +61,16 @@ export function DownloadOptions() {
     {
       id: "simple",
       label: "Markdown Simples",
-      description: "Arquivo .md básico sem metadados",
+      description: "Termo de abertura em .md (sem metadados)",
       icon: <IconFile />,
       color: "hover:bg-blue-50 border-blue-200",
     },
     {
       id: "frontmatter",
       label: "Markdown + Metadados",
-      description: "Arquivo .md com YAML frontmatter para ferramentas",
+      description: "Com YAML frontmatter para Obsidian / Notion",
       icon: <IconFile />,
       color: "hover:bg-purple-50 border-purple-200",
-    },
-    {
-      id: "zip",
-      label: "Pacote Completo",
-      description: "ZIP com PRD, resumo e roadmap em Markdown",
-      icon: <IconPackage />,
-      color: "hover:bg-green-50 border-green-200",
     },
   ];
 
@@ -140,25 +90,9 @@ export function DownloadOptions() {
         generatedAt: new Date(),
       };
 
-      if (format === "simple" || format === "frontmatter") {
-        const prd = generateMarkdownPRD(input);
-        const content = format === "simple" ? prd.simple : prd.withFrontmatter;
-        DownloadManager.downloadText(content, prd.filename);
-      } else if (format === "zip") {
-        const prd = generateMarkdownPRD(input);
-        const summary = generateMarkdownSummary(input);
-        const roadmap = generateMarkdownRoadmap(input);
-
-        const files: Record<string, string> = {
-          "PRD.md": prd.withFrontmatter,
-          "RESUMO-EXECUTIVO.md": summary,
-          "ROADMAP.md": roadmap,
-          "metadata.json": JSON.stringify(input, null, 2),
-        };
-
-        const zipName = `${collectedData.productName}-PRD-${Date.now()}.zip`;
-        await DownloadManager.downloadZip(files, zipName);
-      }
+      const prd = generateMarkdownPRD(input);
+      const content = format === "simple" ? prd.simple : prd.withFrontmatter;
+      DownloadManager.downloadText(content, prd.filename);
     } catch (error) {
       console.error("Erro ao baixar:", error);
       alert("Erro ao processar download");
@@ -171,9 +105,9 @@ export function DownloadOptions() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">Baixar Documentos</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Baixar Termo de Abertura</h2>
         <p className="text-sm text-slate-600 mt-1">
-          Escolha o formato desejado para seus documentos PRD
+          Documento de 1 página em Markdown — pronto para revisão com stakeholders
         </p>
       </div>
 

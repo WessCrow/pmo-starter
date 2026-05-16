@@ -46,17 +46,17 @@ function DraftTab() {
               <div
                 className={cn(
                   "size-2 rounded-full",
-                  collectedData.problem
+                  collectedData.audienceSegment
                     ? "bg-zds-green-400 shadow-[0_0_10px_rgba(18,185,58,0.5)]"
                     : "bg-zds-neutral-800 animate-pulse"
                 )}
               />
               <span className="text-zds-neutral-500">1. O problema</span>
             </h3>
-            {collectedData.problem && <Sparkles size={14} className="text-primary animate-pulse" />}
+            {collectedData.audienceSegment && <Sparkles size={14} className="text-primary animate-pulse" />}
           </div>
-          {collectedData.problem ? (
-            <div className={cardClass}>{collectedData.problem}</div>
+          {collectedData.audienceSegment ? (
+            <div className={cardClass}>{collectedData.audienceSegment}</div>
           ) : (
             <div className="space-y-3 px-6 py-4 border border-dashed border-zds-neutral-800 rounded-2xl bg-zds-neutral-900/50">
               <SkeletonLine />
@@ -76,13 +76,13 @@ function DraftTab() {
             <div
               className={cn(
                 "size-2 rounded-full",
-                collectedData.audience ? "bg-zds-green-400 shadow-[0_0_10px_rgba(18,185,58,0.5)]" : "bg-zds-neutral-800"
+                collectedData.costOfInaction ? "bg-zds-green-400 shadow-[0_0_10px_rgba(18,185,58,0.5)]" : "bg-zds-neutral-800"
               )}
             />
             <span className="text-zds-neutral-500">2. Público-alvo</span>
           </h3>
-          {collectedData.audience ? (
-            <div className={cardClass}>{collectedData.audience}</div>
+          {collectedData.costOfInaction ? (
+            <div className={cardClass}>{collectedData.costOfInaction}</div>
           ) : (
             <div className="space-y-3 px-6 py-4 border border-dashed border-zds-neutral-800 rounded-2xl opacity-60 bg-zds-neutral-900/30">
               <SkeletonLine className="max-w-[75%]" />
@@ -101,14 +101,14 @@ function DraftTab() {
             <div
               className={cn(
                 "size-2 rounded-full",
-                collectedData.solution ? "bg-zds-green-400 shadow-[0_0_10px_rgba(18,185,58,0.5)]" : "bg-zds-neutral-800"
+                collectedData.coreValueProp ? "bg-zds-green-400 shadow-[0_0_10px_rgba(18,185,58,0.5)]" : "bg-zds-neutral-800"
               )}
             />
             <span className="text-zds-neutral-500">3. Proposta de valor</span>
           </h3>
-          {collectedData.solution ? (
+          {collectedData.coreValueProp ? (
             <div className={cn(cardClass, "bg-primary/5 border-primary/20")}>
-              <p className="text-zds-neutral-200 font-medium">{collectedData.solution}</p>
+              <p className="text-zds-neutral-200 font-medium">{collectedData.coreValueProp}</p>
             </div>
           ) : (
             <div className="space-y-3 px-6 py-4 border border-dashed border-zds-neutral-800 rounded-2xl opacity-50 bg-zds-neutral-900/20">
@@ -128,15 +128,15 @@ function DraftTab() {
             <div
               className={cn(
                 "size-2 rounded-full",
-                collectedData.constraints
+                collectedData.hardConstraints
                   ? "bg-zds-green-400 shadow-[0_0_10px_rgba(18,185,58,0.5)]"
                   : "bg-zds-neutral-800"
               )}
             />
             <span className="text-zds-neutral-500">4. Restrições e escopo</span>
           </h3>
-          {collectedData.constraints ? (
-            <div className={cardClass}>{collectedData.constraints}</div>
+          {collectedData.hardConstraints ? (
+            <div className={cardClass}>{collectedData.hardConstraints}</div>
           ) : (
             <div className="h-32 border border-dashed border-zds-neutral-800 rounded-2xl flex items-center justify-center bg-zds-neutral-900/50">
               <p className="text-[10px] font-bold text-zds-neutral-500 uppercase tracking-widest">

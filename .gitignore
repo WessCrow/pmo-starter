@@ -1,7 +1,9 @@
 node_modules/
 .next/
+out/
 .env.local
 .env*.local
 storybook-static/
 *.tsbuildinfo
 .DS_Store
+.github/workflows/

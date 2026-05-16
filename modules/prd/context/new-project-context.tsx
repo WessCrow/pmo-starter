@@ -200,29 +200,30 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
     );
   }, []);
 
-  // ─── Coleta de dados ──────────────────────────────────────────────────────────
+  // ─── Coleta de dados (pura: retorna novo objeto) ─────────────────────────────
 
-  const collectData = (content: string, phase: ChatPhase, questionIndex: number) => {
-    setCollectedData((prev) => {
-      const next = { ...prev };
-
-      if (phase === 0 && questionIndex === 0) {
-        const parsed = parseSetupAnswer(content);
-        next.productName = parsed.productName;
-        next.mvpDeadlineWeeks = parsed.mvpDeadlineWeeks;
-      } else if (phase === 1) {
-        if (questionIndex === 0) next.audienceSegment = content;
-        else if (questionIndex === 1) next.costOfInaction = content;
-      } else if (phase === 2) {
-        if (questionIndex === 0) next.coreValueProp = content;
-        else if (questionIndex === 1) next.northStarMetric = content;
-      } else if (phase === 3) {
-        if (questionIndex === 0) next.outOfScope = content;
-        else if (questionIndex === 1) next.hardConstraints = content;
-      }
-
-      return next;
-    });
+  const applyAnswer = (
+    prev: Partial<ProjectInput>,
+    content: string,
+    phase: ChatPhase,
+    questionIndex: number
+  ): Partial<ProjectInput> => {
+    const next = { ...prev };
+    if (phase === 0 && questionIndex === 0) {
+      const parsed = parseSetupAnswer(content);
+      next.productName = parsed.productName;
+      next.mvpDeadlineWeeks = parsed.mvpDeadlineWeeks;
+    } else if (phase === 1) {
+      if (questionIndex === 0) next.audienceSegment = content;
+      else if (questionIndex === 1) next.costOfInaction = content;
+    } else if (phase === 2) {
+      if (questionIndex === 0) next.coreValueProp = content;
+      else if (questionIndex === 1) next.northStarMetric = content;
+    } else if (phase === 3) {
+      if (questionIndex === 0) next.outOfScope = content;
+      else if (questionIndex === 1) next.hardConstraints = content;
+    }
+    return next;
   };
 
   // Mapa de campos por (fase, questionIndex) — para invalidação no edit
@@ -297,31 +298,28 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
     (content: string) => {
       if (!content.trim() || isAiTyping) return;
 
+      const phase = currentPhase;
+      const qIdx = phaseQuestionIndex;
+
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: "user",
         content,
-        phase: currentPhase,
+        phase,
       };
       setMessages((prev) => [...prev, userMsg]);
       setIsAiTyping(true);
 
-      collectData(content, currentPhase, phaseQuestionIndex);
-
-      // Calcula próximo estado fora do setTimeout para evitar staleness
-      const phase = currentPhase;
-      const qIdx = phaseQuestionIndex;
+      // Calcula novo estado UMA vez e usa em ambos os updates
+      const newData = applyAnswer(collectedData, content, phase, qIdx);
+      setCollectedData(newData);
 
       setTimeout(() => {
-        // Recupera dados atualizados via functional set
-        setCollectedData((latest) => {
-          advanceConversation(phase, qIdx, latest);
-          return latest;
-        });
+        advanceConversation(phase, qIdx, newData);
         setIsAiTyping(false);
       }, 800);
     },
-    [currentPhase, phaseQuestionIndex, isAiTyping]
+    [currentPhase, phaseQuestionIndex, isAiTyping, collectedData]
   );
 
   // ─── Editar mensagem ──────────────────────────────────────────────────────────
@@ -362,25 +360,33 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
       setIsAiTyping(true);
 
       setTimeout(() => {
+        // Lê estado atual via flushSync-like pattern: setState com lookup imediato
+        let msgPhase: ChatPhase = 0;
+        let qIdx = 0;
+        let snapshot: Partial<ProjectInput> = {};
+
         setMessages((prev) => {
           const lastUser = [...prev].reverse().find((m) => m.role === "user");
-          if (!lastUser) return prev;
-
-          const msgPhase = (lastUser.phase ?? 0) as ChatPhase;
-          const userMsgsInPhase = prev.filter(
-            (m) => m.role === "user" && m.phase === msgPhase
-          ).length;
-          const qIdx = userMsgsInPhase - 1;
-
-          collectData(newContent, msgPhase, qIdx);
-
-          setCollectedData((latest) => {
-            advanceConversation(msgPhase, qIdx, latest);
-            return latest;
-          });
-          setIsAiTyping(false);
+          if (lastUser) {
+            msgPhase = (lastUser.phase ?? 0) as ChatPhase;
+            const userMsgsInPhase = prev.filter(
+              (m) => m.role === "user" && m.phase === msgPhase
+            ).length;
+            qIdx = userMsgsInPhase - 1;
+          }
           return prev;
         });
+
+        setCollectedData((latest) => {
+          snapshot = applyAnswer(latest, newContent, msgPhase, qIdx);
+          return snapshot;
+        });
+
+        // advanceConversation roda FORA de qualquer updater
+        setTimeout(() => {
+          advanceConversation(msgPhase, qIdx, snapshot);
+          setIsAiTyping(false);
+        }, 0);
       }, 800);
     },
     []

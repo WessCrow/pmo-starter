@@ -138,15 +138,15 @@ function GeneratingPanel() {
 
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-zds-neutral-200 font-heading tracking-tight">
-            Sincronizando modelos
+            Estruturando termo de abertura
           </h2>
           <p className="text-sm text-zds-neutral-500 max-w-[280px]">
-            A IA está estruturando o contexto e redigindo seus documentos estratégicos.
+            Consolidando as 6 diretrizes estratégicas em um documento de uma página.
           </p>
         </div>
 
         <div className="flex gap-2 flex-wrap justify-center mt-2">
-          {["PRD.md", "CONTEXT.md", "RULES.md"].map((label, i) => (
+          {["TERMO.md", "MATRIZ.md", "GOVERNANCA.md"].map((label, i) => (
             <div
               key={label}
               className="px-4 py-2 rounded-xl text-[10px] font-bold text-zds-blue-400 uppercase tracking-widest bg-white border border-zds-neutral-800 shadow-sm animate-pulse"
@@ -176,13 +176,13 @@ function DonePanel() {
 
         <div className="text-center space-y-3">
           <h2 className="text-2xl font-bold text-zds-neutral-200 font-heading tracking-tight">
-            Prototipação concluída
+            Termo de abertura concluído
           </h2>
           <p className="text-sm font-medium text-primary">
-            Navegue nos artefatos nas abas ao lado
+            6 diretrizes consolidadas em 1 página
           </p>
           <p className="text-[12px] text-zds-neutral-500 leading-relaxed">
-            Baixe toda a documentação e o protótipo ou comece outro projeto.
+            Baixe o documento em Markdown ou inicie um novo termo.
           </p>
         </div>
 
@@ -244,15 +244,15 @@ function ProjectPageHeader() {
             isDone ? "text-zds-green-600" : "text-zds-neutral-500"
           )}
         >
-          {isDone ? "Protótipo concluído" : "Status da coleta"}
+          {isDone ? "Termo concluído" : currentPhase === 0 ? "Setup" : "Diretrizes estratégicas"}
         </span>
         {!isDone && (
           <div className="flex gap-1 items-center justify-center">
-            {[1, 2, 3].map((s) => (
+            {[0, 1, 2, 3].map((s) => (
               <div
                 key={s}
                 className={cn(
-                  "h-1 w-6 rounded-full transition-all duration-500",
+                  "h-1 w-5 rounded-full transition-all duration-500",
                   isGenerating
                     ? "bg-primary/40 animate-pulse"
                     : s <= currentPhase
@@ -265,10 +265,10 @@ function ProjectPageHeader() {
         )}
         {isDone && (
           <div className="flex gap-1 items-center justify-center" aria-hidden>
-            {[1, 2, 3].map((s) => (
+            {[0, 1, 2, 3].map((s) => (
               <div
                 key={s}
-                className="h-1 w-6 rounded-full bg-zds-green-500 shadow-[0_0_6px_rgba(18,185,58,0.35)]"
+                className="h-1 w-5 rounded-full bg-zds-green-500 shadow-[0_0_6px_rgba(18,185,58,0.35)]"
               />
             ))}
           </div>
@@ -277,7 +277,7 @@ function ProjectPageHeader() {
 
       <div className="flex justify-end justify-self-end">
         <div className="px-3 py-1.5 bg-zds-neutral-900 rounded-lg border border-zds-neutral-800">
-          <span className="text-[10px] font-bold text-zds-neutral-500">MVP · Coleta de contexto</span>
+          <span className="text-[10px] font-bold text-zds-neutral-500">Termo de abertura estratégico</span>
         </div>
       </div>
     </header>

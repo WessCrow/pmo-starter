@@ -10,24 +10,21 @@ import { mockAI } from "./mock";
 // import { anthropicAI } from "./anthropic"; // descomente quando pronto
 
 export interface GenerateArtifactsInput {
-  // Fase 1: Contexto & Problema
+  // Setup
   productName: string;
-  problem: string;
-  audience: string;
-  currentWorkflow?: string;
-  impactOfProblem?: string;
+  mvpDeadlineWeeks: number;
 
-  // Fase 2: Solução & Estratégia
-  solution: string;
-  successMetrics?: string;
-  targetRoles?: string;
-  differentiation?: string;
+  // Fase 1: Diagnóstico & Impacto
+  audienceSegment: string;
+  costOfInaction: string;
+
+  // Fase 2: Proposta de Valor
+  coreValueProp: string;
+  northStarMetric: string;
 
   // Fase 3: Escopo & Restrições
-  minimumMVPScope?: string;
-  constraints?: string;
-  dependencies?: string;
-  roadmapPhases?: string;
+  outOfScope: string;
+  hardConstraints: string;
 
   // Papel do usuário
   role: "PM" | "PO" | "GP";

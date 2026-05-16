@@ -147,10 +147,13 @@ export const mockAI: AIService = {
     await delay(800);
     return {
       productName: "Produto Extraído",
-      problem: text.slice(0, 120) + "...",
-      audience: "Usuários identificados no documento",
-      solution: "Solução extraída automaticamente pela IA",
-      constraints: "Restrições identificadas no briefing",
+      mvpDeadlineWeeks: 8,
+      audienceSegment: text.slice(0, 120) + "...",
+      costOfInaction: "Impacto identificado no briefing",
+      coreValueProp: "Proposta de valor extraída automaticamente pela IA",
+      northStarMetric: "Métrica de sucesso a definir",
+      outOfScope: "Fora do escopo a refinar",
+      hardConstraints: "Restrições identificadas no briefing",
       role: "PO",
     };
   },

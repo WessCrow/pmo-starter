@@ -9,6 +9,7 @@ import { storageService } from "@/services/storage";
 export type InputMode = "chat" | "upload";
 export type FlowState = "input" | "generating" | "done";
 export type UserRole = "PM" | "PO" | "GP";
+export type ChatPhase = 0 | 1 | 2 | 3;
 
 export type PreviewTab =
   | { kind: "overview" }
@@ -19,83 +20,113 @@ export interface ChatMessage {
   id: string;
   role: "ai" | "user";
   content: string;
-  phase?: 1 | 2 | 3;
-  isAction?: boolean; // mensagem especial com botão de gerar
+  phase?: ChatPhase;
+  isAction?: boolean;
 }
 
 export interface ProjectInput {
-  // Fase 1: Contexto & Problema
+  // Setup (fase 0)
   productName: string;
-  problem: string;
-  audience: string;
-  currentWorkflow: string;
-  impactOfProblem: string;
+  mvpDeadlineWeeks: number;
 
-  // Fase 2: Solução & Estratégia
-  solution: string;
-  successMetrics: string;
-  targetRoles: string;
-  differentiation: string;
+  // Fase 1: Diagnóstico & Impacto
+  audienceSegment: string;
+  costOfInaction: string;
+
+  // Fase 2: Proposta de Valor
+  coreValueProp: string;
+  northStarMetric: string;
 
   // Fase 3: Escopo & Restrições
-  minimumMVPScope: string;
-  constraints: string;
-  dependencies: string;
-  roadmapPhases: string;
+  outOfScope: string;
+  hardConstraints: string;
 }
 
 // ─── Perguntas do chat por fase ───────────────────────────────────────────────
 
-export const CHAT_PHASES = [
+interface ChatPhaseDef {
+  phase: ChatPhase;
+  label: string;
+  questions: string[];
+  mockAnswers: string[];
+}
+
+export const CHAT_PHASES: ChatPhaseDef[] = [
   {
-    phase: 1 as const,
-    label: "Contexto & Problema",
+    phase: 0,
+    label: "Setup",
     questions: [
-      "Olá! Vou guiar você em algumas perguntas rápidas para montar um PRD estruturado.\n\nPrimeiro: qual é o **nome do produto** e qual **problema principal** ele resolve?",
-      "E quem são os **usuários principais**? Descreva o perfil deles (idade, ocupação, contexto, necessidades).",
-      "Como os usuários **resolvem esse problema hoje**? Descreva o fluxo atual passo-a-passo.",
-      "Qual é o **impacto dessa dor**? Quantos usuários são afetados? Quanto custa? Qual a criticidade?",
+      "Olá! Vou te guiar em **6 perguntas estratégicas** para montar um termo de abertura.\n\nAntes de começar: qual o **nome do produto** e em **quantas semanas** o protótipo precisa estar pronto?\n\n_Ex.: \"PetCare, 8 semanas\"_",
     ],
     mockAnswers: [
-      "PetCare — app que resolve o problema de tutores esquecerem vacinas, consultas e medicações dos seus pets. Hoje isso é feito em caderninho ou na memória, gerando atrasos e riscos de saúde.",
-      "Tutores de pets entre 25 e 45 anos, com 1 ou mais animais. Perfil: pessoas ocupadas, já usam apps de saúde pessoal, querem praticidade e não querem depender de lembretes manuais.",
-      "Fluxo atual: (1) Tutor leva pet ao vet e recebe recomendação verbal ou papel; (2) Anota em caderninho ou tira foto; (3) Precisa lembrar manualmente da data; (4) Se esquecer, perde a data ou vai consultar o histórico em papel desorganizado.",
-      "~5M tutores no Brasil usam apps de pet. 70% esquece alguma vacina por falta de lembrança. Quando esquecem, gastam 30% a mais em emergências vet. Criticidade: Alta para saúde do pet, média para receita (market SaaS de pet vale $2B globalmente).",
+      "PetCare, 8 semanas",
     ],
   },
   {
-    phase: 2 as const,
-    label: "Solução & Estratégia",
+    phase: 1,
+    label: "Diagnóstico & Impacto de Negócio",
     questions: [
-      "Qual é a **solução proposta**? Como o produto resolve esse problema? Seja específico sobre features principais.",
-      "Quais são as **métricas de sucesso**? Como você saberá que resolveu o problema? (ex: time-to-action, retenção, NPS)",
-      "Para quantos e quais **papéis** será necessário criar documentação? (PM, PO, GP, Eng, Design, etc?) Explique por quê.",
-      "Como você se **diferencia da concorrência** ou soluções atuais? Quais as vantagens competitivas?",
+      "**Diretriz 1 — Segmentação & comportamento atual**\n\nQual perfil de usuário detém a maior recorrência da dor e de que forma essa necessidade é mitigada paliativamente hoje?",
+      "**Diretriz 2 — Custo da Inação**\n\nQual o impacto financeiro, operacional ou reputacional caso este problema não seja solucionado no ciclo atual?",
     ],
     mockAnswers: [
-      "App mobile (iOS + Android) com: (1) Agenda inteligente de saúde — lembretes automáticos de vacinas, medicações, check-ups; (2) Histórico veterinário centralizado com documentos; (3) Compartilhamento seguro com veterinário via link; (4) Notificações push 7 dias antes e 1 dia antes do evento.",
-      "Métrica primária: Time-to-action (usuário agendar dose de vacina) reduz de 30 min para 2 min. Métricas secundárias: Retenção M1 ≥80%, NPS ≥7/10, engagement (3+ eventos cadastrados) em 7 dias ≥60%, taxa de agendamento (lembretes → ação) ≥40%.",
-      "PM: PRD estruturado, roadmap, strategy. PO: Especificação técnica, backlog, testes. GP: Validação de mercado, feedback, priorização. Eng: API, mobile, integração vet. Design: Mockups, design system, prototipo.",
-      "Diferencial: (1) Foco exclusivo em saúde animal (não genérico como Google Calendar); (2) Notificações contextualizadas (sabe se é primeira dose ou reforço); (3) Integração com vet (readonly — vet vê histórico sem app); (4) MVP sem pagamento (crescimento por word-of-mouth em tutores).",
+      "Tutores de pets entre 25 e 45 anos, com 1+ animais e rotina ocupada. Hoje mitigam com caderninho ou memória — 70% esquecem alguma vacina por ano.",
+      "Risco de saúde animal e perda de receita por cancelamentos. Estimativa: tutores gastam 30% a mais em emergências vet quando esquecem doses; mercado de pet care SaaS perde ~R$12M/ano em retenção por falta de lembrança automatizada.",
     ],
   },
   {
-    phase: 3 as const,
-    label: "Escopo & Restrições",
+    phase: 2,
+    label: "Proposta de Valor & Validação",
     questions: [
-      "Qual é o **escopo mínimo (MVP)** para validar a hipótese? O que é \"must have\" vs. \"nice to have\"?",
-      "Existem **restrições importantes** — prazo, orçamento, stack tecnológico, tamanho da equipe? Sejam específicos.",
-      "Quais são as **dependências técnicas ou externas**? (APIs, serviços, integrações, conhecimento de domínio)",
-      "Como você imagina a **evolução do produto em 3 fases**? (próximos 6-12 meses). Roadmap de alto nível.",
+      "**Diretriz 3 — Atributo de Diferenciação Crítica**\n\nQual é a capacidade central e indispensável do produto que transformará a experiência do usuário, diferenciando-o drasticamente das alternativas?",
+      "**Diretriz 4 — North Star Metric do MVP**\n\nQual comportamento mensurável do usuário evidenciará que o protótipo inicial efetivamente resolveu a dor proposta?",
     ],
     mockAnswers: [
-      "MVP — Must have: App mobile básico (iOS), cadastro de pet, agenda com 3 tipos de evento (vacina, medicação, check-up), lembretes via notificação. Nice to have: Android, compartilhamento com vet, integração com calendários, análise de compliance vacinação.",
-      "Prazo: MVP em 4 meses (2 sprints de prep + 6 sprints de dev). Equipe: 1 PM, 2 devs mobile (React Native), 1 design, 1 QA part-time. Orçamento: R$250k (salários) + R$50k (infra + tools). Stack obrigatório: React Native, Firebase para notificações, PostgreSQL.",
-      "Dependências: (1) Firebase Cloud Messaging (notificações) — setup 1 dia; (2) App Store + Google Play — review 7-14 dias; (3) Legal — LGPD compliance check — 2 semanas; (4) Conhecimento: ninguém no time tem experiência com saúde de pets — user research crítica.",
-      "Fase 1 (MVP — meses 1-4): App mobile, agenda, lembretes. Fase 2 (v1.5 — meses 5-8): Android, compartilhamento vet, autenticação social. Fase 3 (v2.0 — meses 9-12): Integração clínicas veterinárias, analytics, premium features (compartilhamento com múltiplos vets, documentos).",
+      "Agenda inteligente contextualizada por tipo de evento (vacina, medicação, check-up) com notificações automáticas multi-canal — Google Calendar genérico não entende reforço vs. primeira dose; nós entendemos.",
+      "Taxa de conclusão do fluxo principal (cadastrar pet + agendar primeiro lembrete) superior a 75% sem necessidade de suporte ou onboarding presencial no primeiro acesso.",
+    ],
+  },
+  {
+    phase: 3,
+    label: "Escopo de Negócio & Restrições",
+    questions: [
+      "**Diretriz 5 — Fronteiras de Escopo (Descarte Estratégico)**\n\nVisando garantir a agilidade na entrega em **{deadline}**, quais funcionalidades e fluxos secundários serão deliberadamente despriorizados nesta rodada?",
+      "**Diretriz 6 — Hard Constraints (Restrições Inegociáveis)**\n\nQuais são os limites institucionais, orçamentários, de conformidade legal ou prazos regulatórios que balizam este projeto?",
+    ],
+    mockAnswers: [
+      "Android, compartilhamento com vet via app dedicado, integração nativa com calendários externos e analytics avançados ficam postergados para Fase 2. Versão inicial: iOS, lembretes push, cadastro manual.",
+      "Aderência total à LGPD (dados de pets podem conter dados sensíveis dos tutores), teto orçamentário de R$300k (R$250k salários + R$50k infra), prazo de auditoria interna em 30 de novembro.",
     ],
   },
 ];
+
+const TOTAL_QUESTIONS = CHAT_PHASES.reduce((acc, p) => acc + p.questions.length, 0); // 7
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function parseSetupAnswer(raw: string): { productName: string; mvpDeadlineWeeks: number } {
+  // Tenta extrair "Nome, N semanas" ou variações
+  const weekMatch = raw.match(/(\d+)\s*(semanas?|sem|weeks?|w)\b/i);
+  const mvpDeadlineWeeks = weekMatch ? parseInt(weekMatch[1], 10) : 4;
+
+  // Nome = tudo antes da primeira vírgula, ou antes do número, ou string completa
+  let productName = raw;
+  if (raw.includes(",")) {
+    productName = raw.split(",")[0].trim();
+  } else if (weekMatch) {
+    productName = raw.slice(0, weekMatch.index).trim().replace(/[,;:.]$/, "");
+  }
+  productName = productName.slice(0, 80) || "Meu Produto";
+
+  return { productName, mvpDeadlineWeeks };
+}
+
+function renderQuestion(template: string, data: Partial<ProjectInput>): string {
+  const deadline = data.mvpDeadlineWeeks
+    ? `${data.mvpDeadlineWeeks} semana${data.mvpDeadlineWeeks > 1 ? "s" : ""}`
+    : "X semanas";
+  return template.replace("{deadline}", deadline);
+}
 
 // ─── Context type ─────────────────────────────────────────────────────────────
 
@@ -106,7 +137,8 @@ interface NewProjectContextType {
 
   // Chat
   messages: ChatMessage[];
-  currentPhase: 1 | 2 | 3;
+  currentPhase: ChatPhase;
+  totalQuestions: number;
   isAiTyping: boolean;
   chatComplete: boolean;
   currentMockAnswer: string;
@@ -145,9 +177,9 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
   const [inputMode, setInputMode] = useState<InputMode>("chat");
 
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: "init", role: "ai", content: CHAT_PHASES[0].questions[0], phase: 1 },
+    { id: "init", role: "ai", content: CHAT_PHASES[0].questions[0], phase: 0 },
   ]);
-  const [currentPhase, setCurrentPhase] = useState<1 | 2 | 3>(1);
+  const [currentPhase, setCurrentPhase] = useState<ChatPhase>(0);
   const [phaseQuestionIndex, setPhaseQuestionIndex] = useState(0);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [chatComplete, setChatComplete] = useState(false);
@@ -159,11 +191,8 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
   const [prototypeScreens, setPrototypeScreens] = useState<PrototypeScreen[]>([]);
   const [previewTab, setPreviewTab] = useState<PreviewTab>({ kind: "overview" });
 
-  // Sugestão mock para a pergunta atual
   const currentMockAnswer =
-    CHAT_PHASES[currentPhase - 1]?.mockAnswers?.[phaseQuestionIndex] ?? "";
-
-  // ─── Toggle papel ────────────────────────────────────────────────────────────
+    CHAT_PHASES[currentPhase]?.mockAnswers?.[phaseQuestionIndex] ?? "";
 
   const toggleRole = useCallback((role: UserRole) => {
     setSelectedRoles((prev) =>
@@ -171,64 +200,97 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
     );
   }, []);
 
-  // ─── Chat ────────────────────────────────────────────────────────────────────
+  // ─── Coleta de dados ──────────────────────────────────────────────────────────
 
-  const collectData = (content: string, phase: 1 | 2 | 3, questionIndex: number) => {
+  const collectData = (content: string, phase: ChatPhase, questionIndex: number) => {
     setCollectedData((prev) => {
       const next = { ...prev };
 
-      // Fase 1: Contexto & Problema
-      if (phase === 1) {
-        if (questionIndex === 0) {
-          // Pergunta 1: Produto + Problema
-          next.productName = content.split(" ").slice(0, 5).join(" ");
-          next.problem = content;
-        } else if (questionIndex === 1) {
-          // Pergunta 2: Usuários principais
-          next.audience = content;
-        } else if (questionIndex === 2) {
-          // Pergunta 3: Fluxo atual
-          next.currentWorkflow = content;
-        } else if (questionIndex === 3) {
-          // Pergunta 4: Impacto da dor
-          next.impactOfProblem = content;
-        }
-      }
-      // Fase 2: Solução & Estratégia
-      else if (phase === 2) {
-        if (questionIndex === 0) {
-          // Pergunta 5: Solução proposta
-          next.solution = content;
-        } else if (questionIndex === 1) {
-          // Pergunta 6: Métricas de sucesso
-          next.successMetrics = content;
-        } else if (questionIndex === 2) {
-          // Pergunta 7: Papéis
-          next.targetRoles = content;
-        } else if (questionIndex === 3) {
-          // Pergunta 8: Diferenciação
-          next.differentiation = content;
-        }
-      }
-      // Fase 3: Escopo & Restrições
-      else if (phase === 3) {
-        if (questionIndex === 0) {
-          // Pergunta 9: Escopo MVP
-          next.minimumMVPScope = content;
-        } else if (questionIndex === 1) {
-          // Pergunta 10: Restrições
-          next.constraints = content;
-        } else if (questionIndex === 2) {
-          // Pergunta 11: Dependências
-          next.dependencies = content;
-        } else if (questionIndex === 3) {
-          // Pergunta 12: Roadmap
-          next.roadmapPhases = content;
-        }
+      if (phase === 0 && questionIndex === 0) {
+        const parsed = parseSetupAnswer(content);
+        next.productName = parsed.productName;
+        next.mvpDeadlineWeeks = parsed.mvpDeadlineWeeks;
+      } else if (phase === 1) {
+        if (questionIndex === 0) next.audienceSegment = content;
+        else if (questionIndex === 1) next.costOfInaction = content;
+      } else if (phase === 2) {
+        if (questionIndex === 0) next.coreValueProp = content;
+        else if (questionIndex === 1) next.northStarMetric = content;
+      } else if (phase === 3) {
+        if (questionIndex === 0) next.outOfScope = content;
+        else if (questionIndex === 1) next.hardConstraints = content;
       }
 
       return next;
     });
+  };
+
+  // Mapa de campos por (fase, questionIndex) — para invalidação no edit
+  const fieldFor = (phase: ChatPhase, qIdx: number): (keyof ProjectInput)[] => {
+    if (phase === 0 && qIdx === 0) return ["productName", "mvpDeadlineWeeks"];
+    if (phase === 1 && qIdx === 0) return ["audienceSegment"];
+    if (phase === 1 && qIdx === 1) return ["costOfInaction"];
+    if (phase === 2 && qIdx === 0) return ["coreValueProp"];
+    if (phase === 2 && qIdx === 1) return ["northStarMetric"];
+    if (phase === 3 && qIdx === 0) return ["outOfScope"];
+    if (phase === 3 && qIdx === 1) return ["hardConstraints"];
+    return [];
+  };
+
+  const fieldsAfter = (phase: ChatPhase, qIdx: number): (keyof ProjectInput)[] => {
+    const all: { phase: ChatPhase; qIdx: number }[] = [];
+    for (const p of CHAT_PHASES) {
+      for (let q = 0; q < p.questions.length; q++) {
+        all.push({ phase: p.phase, qIdx: q });
+      }
+    }
+    const startIndex = all.findIndex((x) => x.phase === phase && x.qIdx === qIdx);
+    return all
+      .slice(startIndex + 1)
+      .flatMap((x) => fieldFor(x.phase, x.qIdx));
+  };
+
+  // ─── Avançar conversa ────────────────────────────────────────────────────────
+
+  const advanceConversation = (fromPhase: ChatPhase, fromQIdx: number, data: Partial<ProjectInput>) => {
+    const phaseDef = CHAT_PHASES[fromPhase];
+    const nextQIdx = fromQIdx + 1;
+    const hasMoreInPhase = nextQIdx < phaseDef.questions.length;
+
+    if (hasMoreInPhase) {
+      const aiContent = renderQuestion(phaseDef.questions[nextQIdx], data);
+      setPhaseQuestionIndex(nextQIdx);
+      setMessages((prev) => [
+        ...prev,
+        { id: `ai-${Date.now()}`, role: "ai", content: aiContent, phase: fromPhase },
+      ]);
+      return;
+    }
+
+    if (fromPhase < 3) {
+      const nextPhase = (fromPhase + 1) as ChatPhase;
+      const aiContent = renderQuestion(CHAT_PHASES[nextPhase].questions[0], data);
+      setPhaseQuestionIndex(0);
+      setCurrentPhase(nextPhase);
+      setMessages((prev) => [
+        ...prev,
+        { id: `ai-${Date.now()}`, role: "ai", content: aiContent, phase: nextPhase },
+      ]);
+      return;
+    }
+
+    // Conversa completa
+    setChatComplete(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `ai-${Date.now()}`,
+        role: "ai",
+        content: "Termo de abertura coletado! Selecione os papéis e clique em **Gerar documentos** quando estiver pronto.",
+        phase: 3,
+        isAction: false,
+      },
+    ]);
   };
 
   const sendMessage = useCallback(
@@ -246,44 +308,18 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
 
       collectData(content, currentPhase, phaseQuestionIndex);
 
+      // Calcula próximo estado fora do setTimeout para evitar staleness
+      const phase = currentPhase;
+      const qIdx = phaseQuestionIndex;
+
       setTimeout(() => {
-        const phaseIdx = currentPhase - 1;
-        const phase = CHAT_PHASES[phaseIdx];
-        const nextQIdx = phaseQuestionIndex + 1;
-        const hasMoreQ = nextQIdx < phase.questions.length;
-
-        let aiContent = "";
-        let nextPhase = currentPhase;
-        let nextQ = nextQIdx;
-
-        if (hasMoreQ) {
-          aiContent = phase.questions[nextQIdx];
-        } else if (currentPhase < 3) {
-          const next = CHAT_PHASES[currentPhase];
-          aiContent = next.questions[0];
-          nextPhase = (currentPhase + 1) as 2 | 3;
-          nextQ = 0;
-        } else {
-          // Conversa completa — mensagem de ação inline
-          aiContent = "Contexto coletado! Selecione os papéis e clique em **Gerar documentos** quando estiver pronto.";
-          setChatComplete(true);
-          setIsAiTyping(false);
-          setMessages((prev) => [
-            ...prev,
-            { id: `ai-${Date.now()}`, role: "ai", content: aiContent, phase: currentPhase, isAction: false },
-          ]);
-          return;
-        }
-
-        setPhaseQuestionIndex(nextQ);
-        setCurrentPhase(nextPhase);
-
-        setMessages((prev) => [
-          ...prev,
-          { id: `ai-${Date.now()}`, role: "ai", content: aiContent, phase: nextPhase as 1 | 2 | 3 },
-        ]);
+        // Recupera dados atualizados via functional set
+        setCollectedData((latest) => {
+          advanceConversation(phase, qIdx, latest);
+          return latest;
+        });
         setIsAiTyping(false);
-      }, 1000);
+      }, 800);
     },
     [currentPhase, phaseQuestionIndex, isAiTyping]
   );
@@ -299,7 +335,7 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
         if (idx === -1) return prev;
 
         const targetMsg = prev[idx];
-        const msgPhase = targetMsg.phase ?? 1;
+        const msgPhase = (targetMsg.phase ?? 0) as ChatPhase;
         const userMsgsBefore = prev.slice(0, idx).filter(
           (m) => m.role === "user" && m.phase === msgPhase
         ).length;
@@ -310,58 +346,12 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
 
         setCollectedData((old) => {
           const next = { ...old };
-
-          // Limpar dados da fase editada e posteriores
-          if (msgPhase === 1) {
-            // Fase 1
-            if (userMsgsBefore === 0) {
-              delete next.productName;
-              delete next.problem;
-            } else if (userMsgsBefore === 1) {
-              delete next.audience;
-            } else if (userMsgsBefore === 2) {
-              delete next.currentWorkflow;
-            } else if (userMsgsBefore === 3) {
-              delete next.impactOfProblem;
-            }
-            // Limpar fases posteriores
-            delete next.solution;
-            delete next.successMetrics;
-            delete next.targetRoles;
-            delete next.differentiation;
-            delete next.minimumMVPScope;
-            delete next.constraints;
-            delete next.dependencies;
-            delete next.roadmapPhases;
-          } else if (msgPhase === 2) {
-            // Fase 2
-            if (userMsgsBefore === 0) {
-              delete next.solution;
-            } else if (userMsgsBefore === 1) {
-              delete next.successMetrics;
-            } else if (userMsgsBefore === 2) {
-              delete next.targetRoles;
-            } else if (userMsgsBefore === 3) {
-              delete next.differentiation;
-            }
-            // Limpar fases posteriores
-            delete next.minimumMVPScope;
-            delete next.constraints;
-            delete next.dependencies;
-            delete next.roadmapPhases;
-          } else if (msgPhase === 3) {
-            // Fase 3
-            if (userMsgsBefore === 0) {
-              delete next.minimumMVPScope;
-            } else if (userMsgsBefore === 1) {
-              delete next.constraints;
-            } else if (userMsgsBefore === 2) {
-              delete next.dependencies;
-            } else if (userMsgsBefore === 3) {
-              delete next.roadmapPhases;
-            }
-          }
-
+          // Limpa campos da pergunta editada + posteriores
+          const toClear = [
+            ...fieldFor(msgPhase, userMsgsBefore),
+            ...fieldsAfter(msgPhase, userMsgsBefore),
+          ];
+          for (const f of toClear) delete next[f];
           return next;
         });
 
@@ -376,51 +366,22 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
           const lastUser = [...prev].reverse().find((m) => m.role === "user");
           if (!lastUser) return prev;
 
-          const msgPhase = lastUser.phase ?? 1;
+          const msgPhase = (lastUser.phase ?? 0) as ChatPhase;
           const userMsgsInPhase = prev.filter(
             (m) => m.role === "user" && m.phase === msgPhase
           ).length;
+          const qIdx = userMsgsInPhase - 1;
 
-          collectData(newContent, msgPhase, userMsgsInPhase - 1);
+          collectData(newContent, msgPhase, qIdx);
 
-          const phaseData = CHAT_PHASES[msgPhase - 1];
-          const nextQIdx = userMsgsInPhase;
-          const hasMore = nextQIdx < phaseData.questions.length;
-
-          let aiContent = "";
-          let nextPhase = msgPhase as 1 | 2 | 3;
-          let nextQ = nextQIdx;
-
-          if (hasMore) {
-            aiContent = phaseData.questions[nextQIdx];
-          } else if (msgPhase < 3) {
-            const next = CHAT_PHASES[msgPhase];
-            aiContent = next.questions[0];
-            nextPhase = (msgPhase + 1) as 2 | 3;
-            nextQ = 0;
-          } else {
-            aiContent = "Contexto atualizado! Selecione os papéis e clique em **Gerar documentos** quando estiver pronto.";
-            setChatComplete(true);
-            setIsAiTyping(false);
-            setPhaseQuestionIndex(nextQ);
-            setCurrentPhase(nextPhase);
-            setMessages((p) => [
-              ...p,
-              { id: `ai-${Date.now()}`, role: "ai", content: aiContent, phase: nextPhase },
-            ]);
-            return prev;
-          }
-
-          setPhaseQuestionIndex(nextQ);
-          setCurrentPhase(nextPhase);
+          setCollectedData((latest) => {
+            advanceConversation(msgPhase, qIdx, latest);
+            return latest;
+          });
           setIsAiTyping(false);
-
-          return [
-            ...prev,
-            { id: `ai-${Date.now()}`, role: "ai" as const, content: aiContent, phase: nextPhase },
-          ];
+          return prev;
         });
-      }, 1000);
+      }, 800);
     },
     []
   );
@@ -430,9 +391,19 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
   const submitUpload = useCallback(async (text: string) => {
     setIsAiTyping(true);
     const parsed = await aiService.parseDocument(text);
-    setCollectedData(parsed);
+    const partial: Partial<ProjectInput> = {
+      productName: parsed.productName,
+      mvpDeadlineWeeks: parsed.mvpDeadlineWeeks,
+      audienceSegment: parsed.audienceSegment,
+      costOfInaction: parsed.costOfInaction,
+      coreValueProp: parsed.coreValueProp,
+      northStarMetric: parsed.northStarMetric,
+      outOfScope: parsed.outOfScope,
+      hardConstraints: parsed.hardConstraints,
+    };
+    setCollectedData(partial);
     setIsAiTyping(false);
-    generateArtifactsFrom(parsed);
+    generateArtifactsFrom(partial);
   }, []); // eslint-disable-line
 
   // ─── Gerar ───────────────────────────────────────────────────────────────────
@@ -441,23 +412,19 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
     setFlowState("generating");
     setPreviewTab({ kind: "overview" });
     setPrototypeScreens([]);
-    const base = {
+
+    const base: Omit<GenerateArtifactsInput, "role"> = {
       productName: data.productName ?? "Meu Produto",
-      problem: data.problem ?? "",
-      audience: data.audience ?? "",
-      currentWorkflow: data.currentWorkflow ?? "",
-      impactOfProblem: data.impactOfProblem ?? "",
-      solution: data.solution ?? "",
-      successMetrics: data.successMetrics ?? "",
-      targetRoles: data.targetRoles ?? "",
-      differentiation: data.differentiation ?? "",
-      minimumMVPScope: data.minimumMVPScope ?? "",
-      constraints: data.constraints ?? "",
-      dependencies: data.dependencies ?? "",
-      roadmapPhases: data.roadmapPhases ?? "",
+      mvpDeadlineWeeks: data.mvpDeadlineWeeks ?? 4,
+      audienceSegment: data.audienceSegment ?? "",
+      costOfInaction: data.costOfInaction ?? "",
+      coreValueProp: data.coreValueProp ?? "",
+      northStarMetric: data.northStarMetric ?? "",
+      outOfScope: data.outOfScope ?? "",
+      hardConstraints: data.hardConstraints ?? "",
     };
-    const roles: UserRole[] =
-      selectedRoles.length > 0 ? selectedRoles : ["PO"];
+
+    const roles: UserRole[] = selectedRoles.length > 0 ? selectedRoles : ["PO"];
     const results = await Promise.all(
       roles.map((role) => aiService.generateArtifacts({ ...base, role }))
     );
@@ -467,18 +434,16 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
 
     let screens: PrototypeScreen[] = [];
     try {
-      const prd = all.find((a) => /prd/i.test(a.title));
+      const prd = all.find((a) => /prd|termo/i.test(a.title));
       const prdBody =
         prd?.content ??
         [
-          base.problem,
-          base.audience,
-          base.currentWorkflow,
-          base.impactOfProblem,
-          base.solution,
-          base.successMetrics,
-          base.minimumMVPScope,
-          base.constraints,
+          base.audienceSegment,
+          base.costOfInaction,
+          base.coreValueProp,
+          base.northStarMetric,
+          base.outOfScope,
+          base.hardConstraints,
         ]
           .filter(Boolean)
           .join("\n\n");
@@ -502,6 +467,7 @@ export function NewProjectProvider({ children }: { children: React.ReactNode }) 
         setInputMode,
         messages,
         currentPhase,
+        totalQuestions: TOTAL_QUESTIONS,
         isAiTyping,
         chatComplete,
         currentMockAnswer,

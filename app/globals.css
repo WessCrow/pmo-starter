@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  /* Typography - Zera Foundation */
+  --font-heading: "Work Sans", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "Inconsolata", monospace;
+
+  /* Zera Colors - Brand Blue */
+  --color-primary: #1774DE; /* zds_color_blue_400 */
+  --color-zds-blue-100: #001D38;
+  --color-zds-blue-200: #0C3A6F;
+  --color-zds-blue-300: #1157A7;
+  --color-zds-blue-400: #1774DE;
+  --color-zds-blue-500: #5A9CE8;
+  --color-zds-blue-600: #9CC4F1;
+  --color-zds-blue-700: #DFECFB;
+
+  /* Zera Colors - Neutrals */
+  --color-zds-neutral-100: #000000;
+  --color-zds-neutral-200: #16171A;
+  --color-zds-neutral-300: #363940;
+  --color-zds-neutral-400: #484B52;
+  --color-zds-neutral-500: #8387C0;
+  --color-zds-neutral-600: #B3B7C0;
+  --color-zds-neutral-700: #DCE0E8;
+  --color-zds-neutral-800: #EDEFF3;
+  --color-zds-neutral-900: #F6F7F9;
+  --color-zds-neutral-1000: #FFFFFF;
+
+  /* Zera Colors - Semantic Feedback */
+  --color-zds-green-400: #12B93A;
+  --color-zds-red-400: #D93B2A;
+  --color-zds-yellow-400: #EBA82D;
+
+  /* Zera Spacing Scale */
+  --spacing-zds-0: 0px;
+  --spacing-zds-100: 2px;
+  --spacing-zds-200: 4px;
+  --spacing-zds-300: 8px;
+  --spacing-zds-400: 12px;
+  --spacing-zds-500: 16px;
+  --spacing-zds-600: 24px;
+  --spacing-zds-700: 32px;
+  --spacing-zds-800: 40px;
+  --spacing-zds-900: 48px;
+
+  /* Zera Border Radius */
+  --radius-zds-100: 4px;
+  --radius-zds-200: 8px;
+  --radius-zds-300: 16px;
+  --radius-zds-pill: 256px;
+
+  /* Shorthands para semântica Einstein */
+  --color-surface: var(--color-zds-neutral-900);
+  --color-border: var(--color-zds-neutral-700);
+  --color-text-main: var(--color-zds-neutral-200);
+  --color-text-muted: var(--color-zds-neutral-400);
+  --color-secondary: var(--color-zds-blue-700);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-zds-neutral-1000 font-sans text-base text-zds-neutral-200 antialiased;
+  }
+}
+
+@layer utilities {
+  .shadow-premium {
+    box-shadow: 0 10px 30px -10px rgba(0, 29, 56, 0.08), 0 4px 10px -5px rgba(0, 29, 56, 0.04);
+  }
+  /* box-shadow inline: Tailwind v4 não resolve @apply com utilitários custom no mesmo layer */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20;
+    box-shadow: 0 10px 30px -10px rgba(0, 29, 56, 0.08), 0 4px 10px -5px rgba(0, 29, 56, 0.04);
+  }
+  .glass-dark {
+    @apply bg-zds-neutral-200/80 backdrop-blur-xl border border-white/10;
+    box-shadow: 0 10px 30px -10px rgba(0, 29, 56, 0.08), 0 4px 10px -5px rgba(0, 29, 56, 0.04);
+  }
+  .glow-blue {
+    box-shadow: 0 0 20px -5px var(--color-zds-blue-400);
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+}
